@@ -1,4 +1,4 @@
-module github.com/sevensolutions/traefik-oidc-auth
+module github.com/cdanis/traefik-oidc-auth
 
 go 1.23.2
 
