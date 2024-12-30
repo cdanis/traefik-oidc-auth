@@ -14,15 +14,29 @@ http:
             UrlEnv: "PROVIDER_URL"
             ClientIdEnv: "CLIENT_ID"
             ClientSecretEnv: "CLIENT_SECRET"
-            UsePkce: true
+            UsePkce: false  # STOPSHIP test true + false w/ pocket-id
+            TokenValidation: "IdToken"
             #ValidAudience: "280538749656466235"
-          Scopes: ["openid", "profile", "email"]
+          StateCookie:
+            Secure: false
+            Domain: ".ninefives.online"
+            Name: oidcs
+          #Scopes: ["openid", "profile", "email", "roles", "groups", "superuser"]
+          Scopes: ["openid", "profile", "email", "groups",  ]
           Headers:
             MapClaims:
               - Claim: "preferred_username"
                 Header: "X-Oidc-Username"
               - Claim: "sub"
                 Header: "X-Oidc-Subject"
+              - Claim: "email"
+                Header: "X-Oidc-Email"
+              - Claim: "roles"
+                Header: "X-Oidc-Roles"
+              - Claim: "groups"
+                Header: "X-Oidc-Groups"
+              - Claim: "superuser"
+                Header: "X-Oidc-Superuser"
           # Authorization:
           #   AssertClaims:
           #     - Name: roles
