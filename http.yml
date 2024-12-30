@@ -9,6 +9,8 @@ http:
     oidc-auth:
       plugin:
         traefik-oidc-auth:
+          CallbackDomain: "auth-next.ninefives.online:9080"
+          CallbackScheme: "http"
           LogLevel: DEBUG
           Provider:
             UrlEnv: "PROVIDER_URL"
