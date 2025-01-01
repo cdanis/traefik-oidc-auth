@@ -314,7 +314,7 @@ func (toa *TraefikOidcAuth) handleCallback(rw http.ResponseWriter, req *http.Req
 			Value:    "",
 			Expires:  time.Now().Add(-24 * time.Hour),
 			MaxAge:   -1,
-			Secure:   true,
+			Secure:   toa.Config.StateCookie.Secure,
 			HttpOnly: true,
 			Path:     toa.CallbackURL.Path,
 			Domain:   toa.CallbackURL.Host,
@@ -448,7 +448,7 @@ func (toa *TraefikOidcAuth) redirectToProvider(rw http.ResponseWriter, req *http
 		http.SetCookie(rw, &http.Cookie{
 			Name:     "CodeVerifier",
 			Value:    encryptedCodeVerifier,
-			Secure:   true,
+			Secure:   toa.Config.StateCookie.Secure,
 			HttpOnly: true,
 			Path:     toa.CallbackURL.Path,
 			Domain:   toa.CallbackURL.Host,
