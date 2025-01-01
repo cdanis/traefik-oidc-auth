@@ -66,20 +66,30 @@ func (toa *TraefikOidcAuth) EnsureOidcDiscovery() error {
 }
 
 func (toa *TraefikOidcAuth) CallbackURLAbsolute(req *http.Request) *url.URL {
-	if toa.CallbackURL.Host == "" || toa.CallbackURL.Scheme == "" {
+	if urlIsAbsolute(toa.CallbackURL) {
+		return toa.CallbackURL
+	} else {
 		abs := *toa.CallbackURL
-		abs.Scheme = req.URL.Scheme
-		abs.Host = req.URL.Host
+		fillHostSchemeFromRequest(req, &abs)
 		return &abs
 	}
-	return toa.CallbackURL
 }
 
-func (toa *TraefikOidcAuth) CallbackUriAbsolute(req *http.Request) string {
-	if toa.Config.CallbackDomain != "" && toa.Config.CallbackScheme != "" {
-		return fmt.Sprintf("%s://%s%s", toa.Config.CallbackScheme, toa.Config.CallbackDomain, toa.Config.CallbackUri)
+func (toa *TraefikOidcAuth) isReqForCallback(req *http.Request) bool {
+	u := req.URL
+	fillHostSchemeFromRequest(req, u)
+
+	if u.Path != toa.CallbackURL.Path {
+		return false
 	}
-	return ensureAbsoluteUrl(req, toa.Config.CallbackUri)
+
+	if urlIsAbsolute(toa.CallbackURL) {
+		if u.Scheme != toa.CallbackURL.Scheme || u.Host != toa.CallbackURL.Host {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (toa *TraefikOidcAuth) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -91,7 +101,7 @@ func (toa *TraefikOidcAuth) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	if strings.HasPrefix(req.RequestURI, toa.Config.CallbackUri) && (toa.Config.CallbackDomain == "" || strings.HasPrefix(ensureAbsoluteUrl(req, req.RequestURI), toa.CallbackUriAbsolute(req))) {
+	if toa.isReqForCallback(req) {
 		toa.handleCallback(rw, req)
 		return
 	}
@@ -306,8 +316,8 @@ func (toa *TraefikOidcAuth) handleCallback(rw http.ResponseWriter, req *http.Req
 			MaxAge:   -1,
 			Secure:   true,
 			HttpOnly: true,
-			Path:     toa.Config.CallbackUri,
-			Domain:   toa.Config.CallbackDomain,
+			Path:     toa.CallbackURL.Path,
+			Domain:   toa.CallbackURL.Host,
 			SameSite: http.SameSiteDefaultMode,
 		})
 
@@ -339,7 +349,7 @@ func (toa *TraefikOidcAuth) handleLogout(rw http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	callbackUri := toa.CallbackUriAbsolute(req)
+	callbackUri := toa.CallbackURLAbsolute(req).String()
 	redirectUri := ensureAbsoluteUrl(req, toa.Config.PostLogoutRedirectUri)
 
 	if req.URL.Query().Get("redirect_uri") != "" {
@@ -383,7 +393,7 @@ func (toa *TraefikOidcAuth) redirectToProvider(rw http.ResponseWriter, req *http
 	host := getFullHost(req)
 	originalUrl := fmt.Sprintf("%s%s", host, req.RequestURI)
 
-	redirectUrl := toa.CallbackUriAbsolute(req)
+	redirectUrl := toa.CallbackURLAbsolute(req).String()
 
 	state := OidcState{
 		Action:      "Login",
@@ -440,8 +450,8 @@ func (toa *TraefikOidcAuth) redirectToProvider(rw http.ResponseWriter, req *http
 			Value:    encryptedCodeVerifier,
 			Secure:   true,
 			HttpOnly: true,
-			Path:     toa.Config.CallbackUri,
-			Domain:   toa.Config.CallbackDomain,
+			Path:     toa.CallbackURL.Path,
+			Domain:   toa.CallbackURL.Host,
 			SameSite: http.SameSiteDefaultMode,
 		})
 	}

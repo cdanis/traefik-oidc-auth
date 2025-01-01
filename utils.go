@@ -48,6 +48,10 @@ func makeCookieExpireImmediately(cookie *http.Cookie) *http.Cookie {
 	return cookie
 }
 
+func urlIsAbsolute(u *url.URL) bool {
+	return u.Scheme != "" && u.Host != ""
+}
+
 func parseUrl(rawUrl string) (*url.URL, error) {
 	if rawUrl == "" {
 		return nil, errors.New("invalid empty url")
@@ -63,6 +67,25 @@ func parseUrl(rawUrl string) (*url.URL, error) {
 		return nil, fmt.Errorf("%v is not a valid scheme", u.Scheme)
 	}
 	return u, nil
+}
+
+func fillHostSchemeFromRequest(req *http.Request, u *url.URL) *url.URL {
+	scheme := req.Header.Get("X-Forwarded-Proto")
+	host := req.Header.Get("X-Forwarded-Host")
+
+	if scheme == "" {
+		if req.TLS != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+	if host == "" {
+		host = req.Host
+	}
+	u.Scheme = scheme
+	u.Host = host
+	return u
 }
 
 func getFullHost(req *http.Request) string {

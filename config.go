@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -32,15 +33,10 @@ type Config struct {
 
 	// Can be a relative path or a full URL.
 	// If a relative path is used, the scheme and domain will be taken from the incoming request.
-	// In this case, the callback path will overlay any wrapped services.
-	// If a full URL is used, the scheme and domain will be taken from the URL, and all callbacks
-	// routed there.  It is the user's responsibility to ensure that the callback URL is also routed
-	// to this plugin.
+	// In this case, the callback path will overlay all hostnames behind the middleware.
+	// If a full URL is used, all callbacks are sent there.  It is the user's responsibility to ensure
+	// that the callback URL is also routed to this middleware plugin.
 	CallbackUri string `json:"callback_uri"`
-	// If set, use a fixed callback domain to interface with the IDP.
-	// Particularly useful when combined with StateCookie.Domain.
-	CallbackDomain string `json:"callback_domain"`
-	CallbackScheme string `json:"callback_scheme"`
 
 	// The URL used to start authorization when needed.
 	// All other requests that are not already authorized will return a 401 Unauthorized.
@@ -178,7 +174,7 @@ func New(uctx context.Context, next http.Handler, config *Config, name string) (
 		return nil, err
 	}
 
-	parsedCallbackURL, err := parseUrl(config.CallbackUri)
+	parsedCallbackURL, err := url.Parse(config.CallbackUri)
 	if err != nil {
 		log(config.LogLevel, LogLevelError, "Error while parsing CallbackUri: %s", err.Error())
 		return nil, err
@@ -193,11 +189,17 @@ func New(uctx context.Context, next http.Handler, config *Config, name string) (
 		}
 	}
 
-	log(config.LogLevel, LogLevelInfo, "Configuration loaded. Provider Url: %v", parsedURL)
+	log(config.LogLevel, LogLevelInfo, "Provider Url: %v", parsedURL)
 	log(config.LogLevel, LogLevelInfo, "I will use this URL for callbacks from the IDP: %v", parsedCallbackURL)
+	if urlIsAbsolute(parsedCallbackURL) {
+		log(config.LogLevel, LogLevelInfo, "Callback URL is absolute, will not overlay wrapped services")
+	} else {
+		log(config.LogLevel, LogLevelInfo, "Callback URL is relative, will overlay any wrapped host")
+	}
 	log(config.LogLevel, LogLevelDebug, "Scopes: %s", strings.Join(config.Scopes, ", "))
 	log(config.LogLevel, LogLevelDebug, "StateCookie: %v", config.StateCookie)
 
+	log(config.LogLevel, LogLevelInfo, "Configuration loaded successfully, starting OIDC Auth middleware...")
 	return &TraefikOidcAuth{
 		next:           next,
 		ProviderURL:    parsedURL,
