@@ -9,14 +9,14 @@ http:
     oidc-auth:
       plugin:
         traefik-oidc-auth:
-          
+          CallbackUri: "http://auth-next.ninefives.online:9080/oidc/callback"
           LogLevel: DEBUG
           Provider:
             UrlEnv: "PROVIDER_URL"
             ClientIdEnv: "CLIENT_ID"
             ClientSecretEnv: "CLIENT_SECRET"
-            #UsePkce: false  # STOPSHIP test true + false w/ pocket-id
-            UsePkce: true
+            UsePkce: false  # STOPSHIP test true + false w/ pocket-id
+            #UsePkce: true
             TokenValidation: "IdToken"
             #ValidAudience: "280538749656466235"
           StateCookie:
