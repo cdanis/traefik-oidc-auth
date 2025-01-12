@@ -9,24 +9,25 @@ http:
     oidc-auth:
       plugin:
         traefik-oidc-auth:
+          CallbackUri: "http://auth-next.ninefives.online:9080/oidc/callback"
           LogLevel: DEBUG
           Provider:
             UrlEnv: "PROVIDER_URL"
             ClientIdEnv: "CLIENT_ID"
             ClientSecretEnv: "CLIENT_SECRET"
-            UsePkce: true
-          Scopes: ["openid", "profile", "email"]
+            UsePkce: false
+          SessionCookie:
+            Secure: false
+            Domain: "ninefives.online"
+            Name: "ooooo"
+          Scopes: ["openid", "profile", "email", "groups"]
           Headers:
             - Name: "X-Oidc-Username"
-              Value: "{{`{{ .claims.preferred_username }}`}}"
+              Value: "{{`{{ .claims }}`}}"
             - Name: "X-Oidc-Subject"
               Value: "sub"
             - Name: "Authorization"
               Value: "{{`Bearer {{ .accessToken }}`}}"
-          AuthorizationHeader:
-            Name: "CustomAuth"
-          AuthorizationCookie:
-            Name: "CustomAuth"
           #UnauthorizedBehavior: "Unauthorized"
           # Authorization:
           #   AssertClaims:

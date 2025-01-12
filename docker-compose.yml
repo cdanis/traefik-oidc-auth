@@ -4,7 +4,7 @@ services:
     image: "traefik:v2.11"
     ports:
       - "9080:80"
-      - "8080:8080"
+      - "9089:8080"
     volumes:
       - "./traefik-config.yml:/etc/traefik/traefik.yml:ro"
       - "./http.yml:/etc/traefik/configs/http.yml:ro"
