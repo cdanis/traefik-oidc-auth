@@ -40,7 +40,8 @@ http:
 
   routers:
     whoami:
-      entryPoints: ["web"]
-      rule: "HostRegexp(`.+`)"
+      #entryPoints: ["web"]
+      #rule: "HostRegexp(`.+`)"
+      rule: PathPrefix(`/`)
       service: whoami
       middlewares: ["oidc-auth@file"]
