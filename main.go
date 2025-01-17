@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/sprig"
 	"io"
 	"net/http"
 	"net/url"
@@ -156,7 +157,7 @@ func (toa *TraefikOidcAuth) attachHeaders(req *http.Request, session *SessionSta
 		for _, header := range toa.Config.Headers {
 			if header.Value != "" {
 				if header.template == nil {
-					tpl, err := template.New("").Parse(header.Value)
+					tpl, err := template.New("").Funcs(sprig.FuncMap()).Parse(header.Value)
 
 					if err != nil {
 						return err
